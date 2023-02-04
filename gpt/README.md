@@ -26,4 +26,4 @@ Generated text:
 
 ## Results
 
-![](/Users/damian/Code/makemore/gpt/images/output_gif.gif)
+![output_gif.gif](images%2Foutput_gif.gif)
