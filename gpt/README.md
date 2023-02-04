@@ -27,4 +27,4 @@ Generated text:
 ## Results
 
 
-<img src="images/output_gif.gif" width="1020">
+<img src="images/output_gif.gif">
