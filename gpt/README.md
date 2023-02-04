@@ -26,4 +26,5 @@ Generated text:
 
 ## Results
 
-![output_gif.gif](images%2Foutput_gif.gif)
+
+<img src="images/output_gif.gif" width="1020">
