@@ -1,5 +1,7 @@
+import textwrap
 import torch
 from torch.nn import functional as F
+from typing import Optional, Dict
 
 
 class FeedForward(torch.nn.Module):
@@ -35,7 +37,7 @@ class Block(torch.nn.Module):
 
 
 class GPT(torch.nn.Module):
-    def __init__(self, vocab_size: int, sequence_len: int, n_embedd: int, n_blocks: int, n_heads: int):
+    def __init__(self, vocab_size: int, sequence_len: int, n_embedd: int, n_blocks: int, n_heads: int, device: str):
         super().__init__()
         self.sequence_len = sequence_len
         self.token_embedding_table = torch.nn.Embedding(vocab_size, n_embedd)
@@ -43,11 +45,12 @@ class GPT(torch.nn.Module):
         self.pred_head = torch.nn.Linear(n_embedd, vocab_size)
         self.blocks = torch.nn.ModuleList([Block(n_embedd, sequence_len, n_heads) for _ in range(n_blocks)])
         self.ln = torch.nn.LayerNorm(n_embedd)
+        self.device = device
 
     def forward(self, x):
         B, T = x.size()
         token_embedding = self.token_embedding_table(x)  # (B, T, E)
-        position_embedding = self.position_embedding_table(torch.arange(T))  # (T, E)
+        position_embedding = self.position_embedding_table(torch.arange(T).to(self.device))  # (T, E)
         x = token_embedding + position_embedding  # (B, T, E)
         for block in self.blocks:
             x = block(x)  # (B, T, E)
@@ -56,7 +59,10 @@ class GPT(torch.nn.Module):
         return logits
 
     @torch.no_grad()
-    def generate(self, x, max_len: int):
+    def generate(self, x, max_len: int, tok2char: Optional[Dict[int, str]] = None):
+        if not isinstance(x, torch.Tensor):
+            x = torch.tensor(x, dtype=torch.long, device=self.device)
+            x = x.unsqueeze(0)
         for _ in range(max_len):
             x_cond = x[:, -self.sequence_len:]
             logits = self.forward(x_cond)
@@ -64,6 +70,16 @@ class GPT(torch.nn.Module):
             probs = F.softmax(logits, dim=-1)
             idx_next = torch.multinomial(probs, 1)
             x = torch.cat([x, idx_next], dim=1)
+            if tok2char:
+                import os
+                import time
+                from helpers import decode
+                os.system('cls' if os.name == 'nt' else 'clear')
+                text = decode(x, tok2char)
+                text = "".join(textwrap.wrap(text, 100))
+                print(text)
+                time.sleep(0.01)
+
         return x
 
 
